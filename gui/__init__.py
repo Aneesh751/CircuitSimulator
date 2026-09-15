@@ -1,3 +1,3 @@
-from .main_window import MainWindow
+from .gui import MainGUI
 
-__all__ = ["MainWindow"]
+__all__ = ["MainGUI"]
