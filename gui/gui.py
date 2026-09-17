@@ -1,4 +1,5 @@
 import tkinter as tk
+from tkinter import ttk
 from gui import canvas
 
 
@@ -24,9 +25,14 @@ class MainGUI:
 
         title = tk.Label(self.main, text="Circuit Simulator", font=("IBM Plex Sans", 40), bg="lightgray")
         title.pack(pady=50)
-        start = tk.Button(self.main, text="Open Canvas", font=("IBM Plex Sans", 20), bg="gray", command=self.showCanvas)
+
+        buttonStyle = ttk.Style()
+
+        buttonStyle.configure("TButton", font=("IBM Plex Sans", 20), padding=10, background = "#4A4A4A", foreground = "black")
+
+        start = ttk.Button(self.main, text="Open Canvas", style="TButton", command=self.showCanvas)
         start.pack(pady=20)
-        quit = tk.Button(self.main, text="Quit", font=("IBM Plex Sans", 20), bg="gray", command=self.root.quit)
+        quit = ttk.Button(self.main, text="Quit", style="TButton", command=self.root.quit)
         quit.pack(pady=20)
 
     def showMainMenu(self) -> None:
