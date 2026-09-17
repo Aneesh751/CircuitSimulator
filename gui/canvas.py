@@ -21,6 +21,13 @@ class Canvas(tk.Frame):
         self.vresistor = tk.PhotoImage(file = "assets/vresistor.png").subsample(15, 15)
         self.thermistor = tk.PhotoImage(file = "assets/thermistor.png").subsample(10, 10)
         self.cell = tk.PhotoImage(file = "assets/cell.png").subsample(10, 10)
+        self.battery = tk.PhotoImage(file = "assets/battery.png").subsample(10, 10)
+        self.diode = tk.PhotoImage(file = "assets/diode.png").subsample(10, 10)
+        self.switch = tk.PhotoImage(file = "assets/switch.png").subsample(10,10)
+        self.fuse = tk.PhotoImage(file = "assets/fuse.png").subsample(10,10)
+        self.led = tk.PhotoImage(file = "assets/led.png").subsample(10, 10)
+        self.ldr = tk.PhotoImage(file = "assets/ldr.png").subsample(7, 7)
+
 
         #the array containing all the components
 
@@ -32,6 +39,12 @@ class Canvas(tk.Frame):
             ("Variable Resistor", self.vresistor),
             ("Thermistor", self.thermistor),
             ("Cell", self.cell),
+            ("Battery", self.battery),
+            ("Diode", self.diode),
+            ("Switch", self.switch),
+            ("Fuse", self.fuse),
+            ("LED", self.led),
+            ("LDR", self.ldr),
         ]
 
         self.rowconfigure(1, weight=1)
@@ -75,6 +88,8 @@ class Canvas(tk.Frame):
         self.pLabel = tk.Label(self.navigationFrame, text="1/1", bg="lightgray")
         self.pLabel.grid(row = 1, column = 0, padx=5, pady = 5)
 
+    
+
         canvas = tk.Canvas(self, bg="white")
         canvas.grid(row=1, column = 1, sticky = "nsew", padx = 10, pady = 10)
 
@@ -104,7 +119,7 @@ class Canvas(tk.Frame):
 
         availableHeight = self.componentsBox.winfo_height()
         navigationHeight = self.navigationFrame.winfo_reqheight()
-        possibleHeight = availableHeight - navigationHeight - 20
+        possibleHeight = availableHeight - navigationHeight - 5
 
         if possibleHeight <= 0:
             return
@@ -115,7 +130,7 @@ class Canvas(tk.Frame):
         ]
         if not itemHeights:
             return
-        itemHeight = max(itemHeights) + 20
+        itemHeight = max(itemHeights) + 5
         itemPerPage = max(1, possibleHeight // itemHeight)
 
         if itemPerPage != self.itemsPerPage:
