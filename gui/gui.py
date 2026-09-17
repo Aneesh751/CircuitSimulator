@@ -41,6 +41,7 @@ class MainGUI:
     def showCanvas(self) -> None:
         self.root.title("Circuit Canvas")
         self.canvas.tkraise()
+        
 
     def setupWindow(self) -> None:
         self.root.mainloop()
