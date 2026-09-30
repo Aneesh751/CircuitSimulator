@@ -1,25 +1,43 @@
 # Circuit Simulator
 
-This project is organized as Python packages. Each folder contains an
-`__init__.py` file so its public classes can be imported from the package:
+The project is organized as Python packages. Each package exposes its public
+classes through its `__init__.py` file:
 
 ```python
 from circuit import Circuit
 from components import Component
 ```
 
-## Basic OOP example
+## Project classes
 
-- `Component` stores a name and has a `describe()` method.
-- `Circuit` stores `Component` objects in a list.
-- `GraphManager` receives a `Circuit` object.
-- `Simulator` receives a `GraphManager` object.
-- `MainWindow` receives a `Simulator` object.
-- `main.py` creates the objects and connects them together.
+- `Component` stores a component name.
+- `Circuit` stores a name and a list of `Component` objects.
+- `GraphManager` holds a `Circuit`.
+- `Simulator` holds a `GraphManager`.
+- `MainGUI` creates and displays a `Canvas`; the canvas keeps a reference to
+  its GUI.
+- `main.py` starts the GUI.
 
-This demonstrates classes, constructors, attributes, methods, imports,
-composition, and passing objects into other objects without adding simulation
-rules yet.
+The [circuit-simulator.puml](./circuit-simulator.puml) file contains a
+PlantUML class diagram of these classes.
+
+## Generate PlantUML
+
+Install [`py2puml`](https://pypi.org/project/py2puml/) and run it from the
+project root. Since the project root is not itself a Python package, inspect
+each package separately:
+
+```text
+python -m pip install py2puml
+py2puml --path components --namespace components
+py2puml --path circuit --namespace circuit
+py2puml --path graphs --namespace graphs
+py2puml --path simulation --namespace simulation
+py2puml --path gui --namespace gui
+```
+
+The checked-in diagram consolidates the classes from those package outputs and
+shows the relationships between packages.
 
 ## Run the example
 
@@ -29,5 +47,5 @@ From the project root:
 python main.py
 ```
 
-The important pattern is that each object receives the object it needs in its
-constructor instead of creating it internally.
+`GraphManager` and `Simulator` receive their dependencies through their
+constructors.
