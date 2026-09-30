@@ -130,7 +130,7 @@ class Canvas(tk.Frame):
         ]
         if not itemHeights:
             return
-        itemHeight = max(itemHeights) + 5
+        itemHeight = max(itemHeights) - 25
         itemPerPage = max(1, possibleHeight // itemHeight)
 
         if itemPerPage != self.itemsPerPage:
