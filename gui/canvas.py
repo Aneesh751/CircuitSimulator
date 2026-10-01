@@ -30,7 +30,6 @@ class Canvas(tk.Frame):
 
 
         #the array containing all the components
-
         components = [
             ("Resistor", self.resistor),
             ("Lamp", self.lamp),
@@ -55,31 +54,23 @@ class Canvas(tk.Frame):
         self.items = []
         self.resizeJob = None
 
-        #options toolbar at the top
+
+        #separate frames for options, components, canvas and navigation buttons
         optionsBox = tk.Frame(self, bg = "lightgray")
         optionsBox.grid(row=0, column=0, columnspan = 3, sticky = "ew", padx = 10, pady = 10)
-
-        optionsButtonStyle = ttk.Style()
-        optionsButtonStyle.configure("TButton", font=("IBM Plex Sans", 20), padding=10, background = "#4A4A4A", foreground = "black")
-
-        #buttons
-        back = ttk.Button(optionsBox, text="Back ↩", style="TButton", command=self.gui.showMainMenu)
-        back.grid(row=0, column=0, columnspan = 1, sticky = "w")
-
-
-
-
-        #the frames
         self.componentsBox = tk.Frame(self, bg = "lightgray")
         self.componentsBox.grid(row=1, column=2, sticky = "nsew", padx = 10, pady = 10)
         self.componentsBox.columnconfigure(0, weight=1)
         self.componentsBox.rowconfigure(0, weight=1)
         componentsContainer = tk.Frame(self.componentsBox, bg = "lightgray")
         componentsContainer.grid(row=0, column = 0, sticky = "nsew")
-        componentsContainer.columnconfigure(0, weight=1)
+        componentsContainer.columnconfigure(0, weight=1)    
         self.navigationFrame = tk.Frame(self.componentsBox, bg = "lightgray")
         self.navigationFrame.grid(row=1, column = 0, sticky = "ew")
         self.navigationFrame.columnconfigure(0, weight=0)
+
+        optionsButtonStyle = ttk.Style()
+        optionsButtonStyle.configure("TButton", font=("IBM Plex Sans", 20), padding=10, background = "#4A4A4A", foreground = "black")
 
         self.previous = ttk.Button(self.navigationFrame, text="Previous", style="TButton", command=self.previousPage)
         self.previous.grid(row=2, column=0, padx = 5, pady = 5)
@@ -87,18 +78,20 @@ class Canvas(tk.Frame):
         self.next.grid(row=0, column=0, padx = 5, pady=5)
         self.pLabel = tk.Label(self.navigationFrame, text="1/1", bg="lightgray")
         self.pLabel.grid(row = 1, column = 0, padx=5, pady = 5)
+        back = ttk.Button(optionsBox, text="Back ↩", style="TButton", command=self.gui.showMainMenu)
+        back.grid(row=0, column=0, columnspan = 1, sticky = "w")
 
     
 
         canvas = tk.Canvas(self, bg="white")
         canvas.grid(row=1, column = 1, sticky = "nsew", padx = 10, pady = 10)
 
+        #for loop to iterate through the coimponents array and create a TKinter label for every component
         for name, image in components:
             component = tk.Label(componentsContainer, image=image, compound = "top", text = name, font = ("IBM Plex Sans", 10), bg = "lightgray")
             component.bind("<Enter>", lambda e: self.highlight(e))
             component.bind("<Leave>", lambda e: self.unhighlight(e))
             self.items.append(component)
-
 
         self.componentsBox.bind("<Configure>", self.handleComponentsResize)
         self.after_idle(self.calculateItemsPerPage)
