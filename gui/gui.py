@@ -1,6 +1,7 @@
 import tkinter as tk
 from tkinter import ttk
 from gui import canvas
+from circuit import Circuit
 
 
 class MainGUI:
@@ -20,6 +21,7 @@ class MainGUI:
         #creates a "frame" for the Startup GUI
         self.main = tk.Frame(self.root, bg="lightgray")
         #creates a "frame" for the circuit building canvas GUI
+        self.circuit = Circuit("Untitled")
         self.canvas = canvas.Canvas(self.root, self)
 
         #places the frames in the main window we opened, root
@@ -53,7 +55,7 @@ class MainGUI:
     def showMainMenu(self) -> None:
         self.root.title("CircuitSim")
         self.main.tkraise()
-        
+
     def showCanvas(self) -> None:
         self.root.title("Circuit Canvas")
         self.canvas.tkraise()

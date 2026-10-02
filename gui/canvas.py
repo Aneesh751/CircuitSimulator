@@ -1,6 +1,6 @@
 import tkinter as tk
 from tkinter import ttk
-
+from components import Component
 
 class Canvas(tk.Frame):
 
@@ -83,18 +83,96 @@ class Canvas(tk.Frame):
 
     
 
-        canvas = tk.Canvas(self, bg="white")
-        canvas.grid(row=1, column = 1, sticky = "nsew", padx = 10, pady = 10)
+        self.drawingCanvas = tk.Canvas(self, bg="white")
+        self.drawingCanvas.grid(row=1, column=1, sticky="nsew", padx=10, pady=10)
 
-        #for loop to iterate through the coimponents array and create a TKinter label for every component
+        #dictionary to store components with the name as keys
+        self.componentImages = dict(components)
+
+        #variables to keep track
+        self._drag = None
+        self._dragStart = None
+        self._dragged = False
+        self._previewId = None
+
         for name, image in components:
-            component = tk.Label(componentsContainer, image=image, compound = "top", text = name, font = ("IBM Plex Sans", 10), bg = "lightgray")
-            component.bind("<Enter>", lambda e: self.highlight(e))
-            component.bind("<Leave>", lambda e: self.unhighlight(e))
+            component = tk.Label(componentsContainer, image=image,compound="top",text=name,font=("IBM Plex Sans", 10),bg="lightgray",
+            )
+
+            component.bind("<Enter>", lambda event: self.highlight(event))
+            component.bind("<Leave>", lambda event: self.unhighlight(event))
+            component.bind(
+                "<ButtonPress-1>",
+                lambda event, n=name, img=image: self.startDrag(event, n, img),
+            )
+            component.bind("<B1-Motion>", self.dragMotion)
+            component.bind("<ButtonRelease-1>", self.dropComponent)
             self.items.append(component)
 
         self.componentsBox.bind("<Configure>", self.handleComponentsResize)
         self.after_idle(self.calculateItemsPerPage)
+
+
+    def startDrag(self, event, name: str, image) -> None:
+        self._drag = {"name": name, "image": image}
+        self._dragStart = (event.x_root, event.y_root)
+        self._dragged = False
+
+    def canvasPosition(self, event) -> tuple[int, int, bool]:
+        x = event.x_root - self.drawingCanvas.winfo_rootx()
+        y = event.y_root - self.drawingCanvas.winfo_rooty()
+        inside = (0<= x < self.drawingCanvas.winfo_width()) and (0 <= y < self.drawingCanvas.winfo_height() )
+        return x, y, inside
+    
+    def dragMotion(self, event) -> None:
+        if self._drag is None:
+            return
+
+        startX, startY = self._dragStart
+
+        if not self._dragged:
+
+            #this will ignore very small cursor movements
+            if max(abs(event.x_root - startX), abs(event.y_root - startY)) < 4:
+                return
+
+            #or otherwise, it is being dragged
+            self._dragged = True
+
+        x, y, inside = self.canvasPosition(event)
+
+        if not inside:
+            if self._previewId is not None:
+                self.drawingCanvas.delete(self._previewId)
+                self._previewId = None
+            return
+
+        if self._previewId is None:
+            self._previewId = self.drawingCanvas.create_image(x, y, image=self._drag["image"])
+        else:
+            self.drawingCanvas.coords(self._previewId, x, y)
+
+    def dropComponent(self, event) -> None:
+        if self._drag is None:
+            return
+
+        drag = self._drag
+        x, y, inside = self.canvasPosition(event)
+
+        if self._previewId is not None:
+            self.drawingCanvas.delete(self._previewId)
+            self._previewId = None
+
+        self._drag = None
+        self._dragStart = None
+
+        if self._dragged and inside:
+            placed = Component(drag["name"], x, y)
+            self.gui.circuit.add_component(placed)
+
+            self.gui.circuit.add_component(placed)
+
+            self.drawingCanvas.create_image(x, y, image=self.componentImages[placed.name])   
 
     def handleComponentsResize(self, event=None) -> None:
         if self.resizeJob is not None:
