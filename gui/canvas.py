@@ -118,7 +118,7 @@ class Canvas(tk.Frame):
         self._dragStart = (event.x_root, event.y_root)
         self._dragged = False
 
-    def canvasPosition(self, event) -> tuple[int, int, bool]:
+    def relcanvasPosition(self, event) -> tuple[int, int, bool]:
         x = event.x_root - self.drawingCanvas.winfo_rootx()
         y = event.y_root - self.drawingCanvas.winfo_rooty()
         inside = (0<= x < self.drawingCanvas.winfo_width()) and (0 <= y < self.drawingCanvas.winfo_height() )
@@ -136,10 +136,10 @@ class Canvas(tk.Frame):
             if max(abs(event.x_root - startX), abs(event.y_root - startY)) < 4:
                 return
 
-            #or otherwise, it is being dragged
+            #if not its being dragged
             self._dragged = True
 
-        x, y, inside = self.canvasPosition(event)
+        x, y, inside = self.relcanvasPosition(event)
 
         if not inside:
             if self._previewId is not None:
@@ -157,7 +157,7 @@ class Canvas(tk.Frame):
             return
 
         drag = self._drag
-        x, y, inside = self.canvasPosition(event)
+        x, y, inside = self.relcanvasPosition(event)
 
         if self._previewId is not None:
             self.drawingCanvas.delete(self._previewId)
