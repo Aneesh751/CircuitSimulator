@@ -72,14 +72,16 @@ class Canvas(tk.Frame):
         optionsButtonStyle = ttk.Style()
         optionsButtonStyle.configure("TButton", font=("IBM Plex Sans", 20), padding=10, background = "#4A4A4A", foreground = "black")
 
-        self.previous = ttk.Button(self.navigationFrame, text="Previous", style="TButton", command=self.previousPage)
+        self.previous = ttk.Button(self.navigationFrame, text = "Previous", style = "TButton", command = self.previousPage)
         self.previous.grid(row=2, column=0, padx = 5, pady = 5)
-        self.next = ttk.Button(self.navigationFrame, text="Next", style="TButton", command=self.nextPage)
+        self.next = ttk.Button(self.navigationFrame, text= "Next", style = "TButton", command=self.nextPage)
         self.next.grid(row=0, column=0, padx = 5, pady=5)
         self.pLabel = tk.Label(self.navigationFrame, text="1/1", bg="lightgray")
         self.pLabel.grid(row = 1, column = 0, padx=5, pady = 5)
-        back = ttk.Button(optionsBox, text="Back ↩", style="TButton", command=self.gui.showMainMenu)
+        back = ttk.Button(optionsBox, text = "Back ↩", style =  "TButton", command = self.gui.showMainMenu)
         back.grid(row=0, column=0, columnspan = 1, sticky = "w")
+        clear = ttk.Button(optionsBox, text = "Clear Canvas", style = "TButton", command = self.clearCanvas)
+        clear.grid(row = 0, column = 1, columnspan = 1, sticky = "e")
 
     
 
@@ -112,6 +114,9 @@ class Canvas(tk.Frame):
         self.componentsBox.bind("<Configure>", self.handleComponentsResize)
         self.after_idle(self.calculateItemsPerPage)
 
+    def clearCanvas(self) -> None:
+        self.drawingCanvas.delete("all")
+        self.gui.circuit.clear_components()
 
     def startDrag(self, event, name: str, image) -> None:
         self._drag = {"name": name, "image": image}

@@ -11,3 +11,6 @@ class Circuit:
 
     def describe(self) -> str:
         return f"Circuit: {self.name}"
+
+    def clear_components(self) -> None:
+        self.components.clear()
