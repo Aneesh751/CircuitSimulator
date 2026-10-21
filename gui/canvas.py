@@ -69,6 +69,7 @@ class Canvas(tk.Frame):
         self.navigationFrame.grid(row=1, column = 0, sticky = "ew")
         self.navigationFrame.columnconfigure(0, weight=0)
 
+
         optionsButtonStyle = ttk.Style()
         optionsButtonStyle.configure("TButton", font=("IBM Plex Sans", 20), padding=10, background = "#4A4A4A", foreground = "black")
 
@@ -84,9 +85,18 @@ class Canvas(tk.Frame):
         clear.grid(row = 0, column = 1, columnspan = 1, sticky = "e")
 
     
-
+        #the actual canvas where components can be placed
         self.drawingCanvas = tk.Canvas(self, bg="white")
         self.drawingCanvas.grid(row=1, column=1, sticky="nsew", padx=10, pady=10)
+
+        #dictionary to keep track of components that are placed
+        self.placedComponents: dict[int, Component] = {}
+        #id to identify a component on the canvas being selected
+        self.selectedItemID : int | None = None
+        #offset of a drag
+        self.dragOffset: tuple[int, int] | None = None
+
+
 
         #dictionary to store components with the name as keys
         self.componentImages = dict(components)

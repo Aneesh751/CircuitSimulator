@@ -12,5 +12,12 @@ class Circuit:
     def describe(self) -> str:
         return f"Circuit: {self.name}"
 
+
+    #deleting components:
+
     def clear_components(self) -> None:
         self.components.clear()
+
+    def remove_component(self, component: Component) -> None:
+        if component in self.components:
+            self.components.remove(component)
