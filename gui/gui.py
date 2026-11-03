@@ -5,20 +5,19 @@ from circuit import Circuit
 
 
 class MainGUI:
-
     def __init__(self) -> None:
-        #creates the main window as a tkinter instance
+        #creates the main window as a tkinter instance. this is what the whole window will be based off of
         self.root = tk.Tk()
 
-        #sets up the basic settings of the GUI
+        #sets up the basic settings of the gui, like the title of the window, how big it is and the background
         self.root.title("CircuitSim")
         self.root.geometry("500x500")
         self.root.configure(bg="lightgray")
 
-        #auto maximises the window when the program runs
+        #auto maximises the window when the program runs, so its fullscreen
         self.root.state("zoomed")
 
-        #creates a "frame" for the Startup GUI
+        #creates a "frame" for the startup gui, which can be "raised" or "lowered" to switch between windows smoothly
         self.main = tk.Frame(self.root, bg="lightgray")
         #creates a "frame" for the circuit building canvas GUI
         self.circuit = Circuit("Untitled")
@@ -55,11 +54,8 @@ class MainGUI:
     def showMainMenu(self) -> None:
         self.root.title("CircuitSim")
         self.main.tkraise()
-
     def showCanvas(self) -> None:
         self.root.title("Circuit Canvas")
         self.canvas.tkraise()
-        
-
     def setupWindow(self) -> None:
         self.root.mainloop()

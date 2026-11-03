@@ -27,8 +27,6 @@ class Canvas(tk.Frame):
         self.fuse = tk.PhotoImage(file = "assets/fuse.png").subsample(10,10)
         self.led = tk.PhotoImage(file = "assets/led.png").subsample(10, 10)
         self.ldr = tk.PhotoImage(file = "assets/ldr.png").subsample(7, 7)
-
-
         #the array containing all the components
         components = [
             ("Resistor", self.resistor),
@@ -45,7 +43,6 @@ class Canvas(tk.Frame):
             ("LED", self.led),
             ("LDR", self.ldr),
         ]
-
         self.rowconfigure(1, weight=1)
         self.columnconfigure(1, weight=1)
         self.columnconfigure(2, weight = 0)
@@ -53,7 +50,6 @@ class Canvas(tk.Frame):
         self.itemsPerPage = 0
         self.items = []
         self.resizeJob = None
-
 
         #separate frames for options, components, canvas and navigation buttons
         optionsBox = tk.Frame(self, bg = "lightgray")
@@ -69,10 +65,22 @@ class Canvas(tk.Frame):
         self.navigationFrame.grid(row=1, column = 0, sticky = "ew")
         self.navigationFrame.columnconfigure(0, weight=0)
 
+        #panel that opens up for a component on the canvas
+        self.sidePanel = tk.Frame(self.componentsBox, bg = "white", padx = 10, pady = 10)
+        self.sidePanel.grid(row = 2, column = 0, sticky = "ew", pady = 10)
+        #hide the panel so that it doesnt always show whenever the canvas gui opens
+        self.sidePanel.grid_remove()
+        self.detailsLabel = tk.Label(self.sidePanel, bg = "white", font = ("IBM Plex Sans", 12))
+        self.detailsLabel.configure(text = component.name)
+        self.detailsLabel.pack(side = "left", padx = 5)
+        self.sidePanel.grid()
+
+        #delete button in that panel
+        self.deleteButton = ttk.Button(self.sidePanel, text = "Delete", command = self.deleteComponent)
+        self.deleteButton.pack(side = "right", padx = 5)
 
         optionsButtonStyle = ttk.Style()
         optionsButtonStyle.configure("TButton", font=("IBM Plex Sans", 20), padding=10, background = "#4A4A4A", foreground = "black")
-
         self.previous = ttk.Button(self.navigationFrame, text = "Previous", style = "TButton", command = self.previousPage)
         self.previous.grid(row=2, column=0, padx = 5, pady = 5)
         self.next = ttk.Button(self.navigationFrame, text= "Next", style = "TButton", command=self.nextPage)
@@ -89,6 +97,13 @@ class Canvas(tk.Frame):
         self.drawingCanvas = tk.Canvas(self, bg="white")
         self.drawingCanvas.grid(row=1, column=1, sticky="nsew", padx=10, pady=10)
 
+        #mouse events
+        self.drawingCanvas.bind("<Button-1>", self.selectAndDrag)
+        self.drawingCanvas.bind("<B1-Motion>", self.dragSelected)
+        self.drawingCanvas.bind("<ButtonRelease-1>", self.releaseSelected)
+
+        #delete key
+        self.gui.root.bind("<Delete>", self.deleteComponent)
         #dictionary to keep track of components that are placed
         self.placedComponents: dict[int, Component] = {}
         #id to identify a component on the canvas being selected
@@ -97,10 +112,8 @@ class Canvas(tk.Frame):
         self.dragOffset: tuple[int, int] | None = None
 
 
-
         #dictionary to store components with the name as keys
         self.componentImages = dict(components)
-
         #variables to keep track
         self._drag = None
         self._dragStart = None
@@ -110,7 +123,6 @@ class Canvas(tk.Frame):
         for name, image in components:
             component = tk.Label(componentsContainer, image=image,compound="top",text=name,font=("IBM Plex Sans", 10),bg="lightgray",
             )
-
             component.bind("<Enter>", lambda event: self.highlight(event))
             component.bind("<Leave>", lambda event: self.unhighlight(event))
             component.bind(
@@ -123,16 +135,80 @@ class Canvas(tk.Frame):
 
         self.componentsBox.bind("<Configure>", self.handleComponentsResize)
         self.after_idle(self.calculateItemsPerPage)
+    def selectAndDrag(self, event) -> None:
+        #this gets the components currently under the mouse pointer that have been placed on the canvas
+        currentComponents = self.drawingCanvas.find_withtag("current")
+
+        if not currentComponents:
+            self.cancelSelection()
+            return
+        itemId = currentComponents[-1]
+        if itemId not in self.placedComponents:
+            self.cancelSelection()
+            return
+        self.selectedItemID = itemId
+        component = self.placedComponents[itemId]
+        self.detailsLabel.configure(text = component.name)
+        self.detailsLabel.grid()
+        x_cord = self.drawingCanvas.canvasx(event.x)
+        y_cord = self.drawingCanvas.canvasy(event.y)
+        image_x, image_y = self.drawingCanvas.coords(itemId)
+
+        #this saves the deviation between the actual click position and the position of the image, so dragging is smooth
+        self.dragOffset = (x_cord - image_x, y_cord - image_y)
+    def dragSelected(self, event) -> None:
+        #checks to cancel the method if nothing valid has been selected or if the component hasnt been dragged
+        if self.selectedItemID is None: 
+            return
+        if self.dragOffset is None:
+            return
+        origX = self.drawingCanvas.canvasx(event.x)
+        origY = self.drawingCanvas.canvasy(event.y)
+        newX = origX - self.dragOffset[0]
+        newY = origY - self.dragOffset[1]
+        self.drawingCanvas.coords(self.selectedItemID, newX, newY)
+
+        component = self.placedComponents[self.selectedItemID]
+        component.x = round(newX)
+        component.y = round(newY)
+        #rounding to make sure the new coordinates are integers, because the components class needs integers
+    def releaseSelected(self, event) -> None:
+        self.dragOffset = None
+
+    def deleteComponent(self, event = None) -> None:
+        if self.selectedItemID is None:
+            return
+
+        #this method is called whenever the delete key is pressed, so there needs to be a way to prevent a component
+        #being deleted if the user is typing something in a text box, not necessarily deleting a component.
+        #to do this i'll check which "element" is currently in focus by the keyboard.
+        focusedElement = self.gui.root.focus_get()
+        #this checks if the element in focus by the keyboard is a text entry or not.
+        if isinstance(focusedElement, (tk.Entry, ttk.Entry)):
+            return
+        #if not, proceed as normal#
+        component = self.placedComponents.pop(self.selectedItemID)
+        self.drawingCanvas.delete(self.selectedItemID)
+        self.gui.circuit.remove_component(component)
+        self.cancelSelection()
+
+        return "break"
+    def cancelSelection(self) -> None:
+        self.selectedItemID = None
+        self.dragOffset = None
+        self.sidePanel.grid_remove()
+
+
 
     def clearCanvas(self) -> None:
         self.drawingCanvas.delete("all")
         self.gui.circuit.clear_components()
-
-    def startDrag(self, event, name: str, image) -> None:
+        self.placedComponents.clear()
+        self.clearSelection()
+    def startDrag(self, event, name: str, image) ->  None:
         self._drag = {"name": name, "image": image}
         self._dragStart = (event.x_root, event.y_root)
         self._dragged = False
-
     def relcanvasPosition(self, event) -> tuple[int, int, bool]:
         x = event.x_root - self.drawingCanvas.winfo_rootx()
         y = event.y_root - self.drawingCanvas.winfo_rooty()
@@ -142,26 +218,20 @@ class Canvas(tk.Frame):
     def dragMotion(self, event) -> None:
         if self._drag is None:
             return
-
         startX, startY = self._dragStart
-
         if not self._dragged:
 
             #this will ignore very small cursor movements
             if max(abs(event.x_root - startX), abs(event.y_root - startY)) < 4:
                 return
-
             #if not its being dragged
             self._dragged = True
-
         x, y, inside = self.relcanvasPosition(event)
-
         if not inside:
             if self._previewId is not None:
                 self.drawingCanvas.delete(self._previewId)
                 self._previewId = None
             return
-
         if self._previewId is None:
             self._previewId = self.drawingCanvas.create_image(x, y, image=self._drag["image"])
         else:
@@ -170,29 +240,23 @@ class Canvas(tk.Frame):
     def dropComponent(self, event) -> None:
         if self._drag is None:
             return
-
         drag = self._drag
         x, y, inside = self.relcanvasPosition(event)
-
         if self._previewId is not None:
             self.drawingCanvas.delete(self._previewId)
             self._previewId = None
-
         self._drag = None
         self._dragStart = None
-
         if self._dragged and inside:
             placed = Component(drag["name"], x, y)
             self.gui.circuit.add_component(placed)
 
-            self.gui.circuit.add_component(placed)
-
             self.drawingCanvas.create_image(x, y, image=self.componentImages[placed.name])   
+            self.placedComponents[self.selectedItemID] = placed
 
     def handleComponentsResize(self, event=None) -> None:
         if self.resizeJob is not None:
             self.after_cancel(self.resizeJob)
-
         self.resizeJob = self.after(100, self.calculateItemsPerPage)
 
     def highlight(self, event) -> None:
@@ -202,14 +266,12 @@ class Canvas(tk.Frame):
 
     def calculateItemsPerPage(self) -> None:
         self.update_idletasks()
-
         availableHeight = self.componentsBox.winfo_height()
         navigationHeight = self.navigationFrame.winfo_reqheight()
         possibleHeight = availableHeight - navigationHeight - 5
 
         if possibleHeight <= 0:
             return
-        
         itemHeights = [
             component.winfo_reqheight()
             for component in self.items
@@ -234,10 +296,8 @@ class Canvas(tk.Frame):
     def showCurrentPage(self) -> None:
         for item in self.items:
             item.grid_remove()
-
         sIndex = self.currentPage * self.itemsPerPage
         eIndex = sIndex + self.itemsPerPage
-
         viewableItems = self.items[sIndex:eIndex]
 
         for row, item in enumerate(viewableItems):
@@ -245,10 +305,8 @@ class Canvas(tk.Frame):
         totalPages = self.getTotalPages()
 
         self.pLabel.configure(text=f"{self.currentPage + 1} / {totalPages}")
-
         self.previous.configure(state = "normal" if self.currentPage > 0 else "disabled")
         self.next.configure(state = "normal" if self.currentPage < totalPages - 1 else "disabled")
-
         if totalPages <= 1:
             self.navigationFrame.grid_remove()
         else:
