@@ -1,5 +1,6 @@
 import tkinter as tk
 from tkinter import ttk
+import customtkinter as ctk
 from components import Component
 
 class Canvas(tk.Frame):
@@ -7,12 +8,27 @@ class Canvas(tk.Frame):
 
 
     def __init__(self, parent, gui) -> None:
-        super().__init__(parent, bg="lightblue")
+        #colour constants
+        self.oColour = "#19354D"
+        self.pColour = "#E8EEF3"
+        self.hColour = "#DCE8F1"
+        self.bgColour = "#C7D5E0"
+        self.textColour = "#263746"
+        self.sColour = "#64748B"
+        self.cColour = "#FFFFFF"
+        self.aColour = "#294F70"
+        self.selColour = "#B8D4E8"
+        self.buttonHover = "#3B6385"
+        self.disabledColour = "#B0BEC9"
+        super().__init__(parent, bg=self.bgColour)
         self.gui = gui
+
         self.createCanvas()
 
     def createCanvas(self) -> None:
 
+
+        
         #images for components
         self.resistor = tk.PhotoImage(file="assets/resistor.png").subsample(15, 15)
         self.lamp = tk.PhotoImage(file = "assets/lamp.png").subsample(10, 10)
@@ -55,16 +71,16 @@ class Canvas(tk.Frame):
         self.resizeJob = None
 
         #separate frames for options, components, canvas and navigation buttons
-        optionsBox = tk.Frame(self, bg = "lightgray")
-        optionsBox.grid(row=0, column=0, columnspan = 3, sticky = "ew", padx = 10, pady = 10)
-        self.componentsBox = tk.Frame(self, bg = "lightgray")
-        self.componentsBox.grid(row=1, column=2, sticky = "nsew", padx = 10, pady = 10)
+        optionsBox = tk.Frame(self, bg = self.oColour)
+        optionsBox.grid(row=0, column=0, columnspan = 3, sticky = "ew")
+        self.componentsBox = tk.Frame(self, bg = self.pColour, padx = 8, pady = 8)
+        self.componentsBox.grid(row = 1, column = 2, sticky = "nsew", padx = (0, 10), pady = 10)
         self.componentsBox.columnconfigure(0, weight=1)
         self.componentsBox.rowconfigure(0, weight=1)
-        componentsContainer = tk.Frame(self.componentsBox, bg = "lightgray")
-        componentsContainer.grid(row=0, column = 0, sticky = "nsew")
-        componentsContainer.columnconfigure(0, weight=1)    
-        self.navigationFrame = tk.Frame(self.componentsBox, bg = "lightgray")
+        componentsContainer = tk.Frame(self.componentsBox, bg = self.pColour)
+        componentsContainer.grid(row = 0, column = 0, sticky = "nsew")
+        componentsContainer.columnconfigure(0, weight = 1)    
+        self.navigationFrame = tk.Frame(self.componentsBox, bg = self.pColour)
         self.navigationFrame.grid(row=1, column = 0, sticky = "ew")
         self.navigationFrame.columnconfigure(0, weight=0)
 
@@ -81,22 +97,21 @@ class Canvas(tk.Frame):
 
     
 
-        optionsButtonStyle = ttk.Style()
-        optionsButtonStyle.configure("TButton", font=("IBM Plex Sans", 20), padding=10, background = "#4A4A4A", foreground = "black")
-        self.previous = ttk.Button(self.navigationFrame, text = "Previous", style = "TButton", command = self.previousPage)
+
+        self.previous = ctk.CTkButton(self.navigationFrame, text = "Previous", font = ("IBM Plex Sans", 13), command = self.previousPage, width = 125, height = 38, corner_radius = 5, fg_color = "white", hover_color = self.hColour, text_color = self.textColour, border_color = self.cColour, border_width = 1)
         self.previous.grid(row=2, column=0, padx = 5, pady = 5)
-        self.next = ttk.Button(self.navigationFrame, text= "Next", style = "TButton", command=self.nextPage)
+        self.next = ctk.CTkButton(self.navigationFrame, text = "Next", font = ("IBM Plex Sans", 13), command = self.nextPage, width = 125, height = 38, corner_radius = 5, fg_color = self.oColour, hover_color = self.aColour)
         self.next.grid(row=0, column=0, padx = 5, pady=5)
-        self.pLabel = tk.Label(self.navigationFrame, text="1/1", bg="lightgray")
+        self.pLabel = tk.Label(self.navigationFrame, text = "1/1", font = ("IBM Plex Sans", 10), bg = self.pColour, fg = self.sColour)
         self.pLabel.grid(row = 1, column = 0, padx=5, pady = 5)
-        back = ttk.Button(optionsBox, text = "Back ↩", style =  "TButton", command = self.gui.showMainMenu)
-        back.grid(row=0, column=0, columnspan = 1, sticky = "w")
-        clear = ttk.Button(optionsBox, text = "Clear Canvas", style = "TButton", command = self.clearCanvas)
+        back = ctk.CTkButton(optionsBox, text = "Back ↩", font = ("IBM Plex Sans", 15), width = 110, height = 40, fg_color = "#294F70", hover_color = "#3B6385", text_color = "white", command = self.gui.showMainMenu)
+        back.grid(row = 0, column = 0, padx = 10, pady = 8)
+        clear = ctk.CTkButton(optionsBox, text = "Clear Canvas", font = ("IBM Plex Sans", 15), width = 140, height = 40, corner_radius = 5, fg_color = "#294F70", hover_color = "#3B6385", text_color = "white", command = self.clearCanvas)
         clear.grid(row = 0, column = 1, columnspan = 1, sticky = "e")
 
     
         #the actual canvas where components can be placed
-        self.drawingCanvas = tk.Canvas(self, bg="white")
+        self.drawingCanvas = tk.Canvas(self, bg = "white", highlightbackground = self.cColour, highlightcolor = self.aColour)
         self.drawingCanvas.grid(row=1, column=1, sticky="nsew", padx=10, pady=10)
 
         #mouse events
@@ -123,7 +138,7 @@ class Canvas(tk.Frame):
         self._previewId = None
 
         for name, image in components:
-            component = tk.Label(componentsContainer, image = image, compound= "top", text = name, font = ("IBM Plex Sans", 10) , bg= "lightgray")
+            component = tk.Label(componentsContainer, image = image, compound= "top", text = name, font = ("IBM Plex Sans", 10) , bg = self.pColour, fg = self.textColour, cursor = "hand2", padx = 8, pady = 8)
             component.bind("<Enter>", lambda event: self.highlight(event))
             component.bind("<Leave>", lambda event: self.unhighlight(event))
             component.bind("<ButtonPress-1>", lambda event, n=name, img=image: self.startDrag(event, n, img))
@@ -258,9 +273,9 @@ class Canvas(tk.Frame):
         self.resizeJob = self.after(100, self.calculateItemsPerPage)
 
     def highlight(self, event) -> None:
-        event.widget.configure(bg = "#B3AAAA", borderwidth = 1, relief = "solid")
+        event.widget.configure(bg = self.hColour, borderwidth = 1, relief = "solid")
     def unhighlight(self, event) -> None:
-        event.widget.configure(bg = "lightgray", borderwidth = 0, relief = "flat")
+        event.widget.configure(bg = self.pColour, borderwidth = 0, relief = "flat")
 
     def calculateItemsPerPage(self) -> None:
         self.update_idletasks()
