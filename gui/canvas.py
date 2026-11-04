@@ -27,6 +27,9 @@ class Canvas(tk.Frame):
         self.fuse = tk.PhotoImage(file = "assets/fuse.png").subsample(10,10)
         self.led = tk.PhotoImage(file = "assets/led.png").subsample(10, 10)
         self.ldr = tk.PhotoImage(file = "assets/ldr.png").subsample(7, 7)
+
+        #utility button images
+        self.delete = tk.PhotoImage(file = "assets/delete.png").subsample(7, 7)
         #the array containing all the components
         components = [
             ("Resistor", self.resistor),
@@ -70,14 +73,13 @@ class Canvas(tk.Frame):
         self.sidePanel.grid(row = 2, column = 0, sticky = "ew", pady = 10)
         #hide the panel so that it doesnt always show whenever the canvas gui opens
         self.sidePanel.grid_remove()
-        self.detailsLabel = tk.Label(self.sidePanel, bg = "white", font = ("IBM Plex Sans", 12))
-        self.detailsLabel.configure(text = component.name)
+        self.detailsLabel = tk.Label(self.sidePanel, bg = "white", font = ("IBM Plex Sans", 12), image = self.delete, compound = "bottom")
+        self.detailsLabel.bind("<Button-1>", self.deleteComponent)
+        self.detailsLabel.configure(text = "")
+        
         self.detailsLabel.pack(side = "left", padx = 5)
-        self.sidePanel.grid()
 
-        #delete button in that panel
-        self.deleteButton = ttk.Button(self.sidePanel, text = "Delete", command = self.deleteComponent)
-        self.deleteButton.pack(side = "right", padx = 5)
+    
 
         optionsButtonStyle = ttk.Style()
         optionsButtonStyle.configure("TButton", font=("IBM Plex Sans", 20), padding=10, background = "#4A4A4A", foreground = "black")
@@ -121,14 +123,10 @@ class Canvas(tk.Frame):
         self._previewId = None
 
         for name, image in components:
-            component = tk.Label(componentsContainer, image=image,compound="top",text=name,font=("IBM Plex Sans", 10),bg="lightgray",
-            )
+            component = tk.Label(componentsContainer, image = image, compound= "top", text = name, font = ("IBM Plex Sans", 10) , bg= "lightgray")
             component.bind("<Enter>", lambda event: self.highlight(event))
             component.bind("<Leave>", lambda event: self.unhighlight(event))
-            component.bind(
-                "<ButtonPress-1>",
-                lambda event, n=name, img=image: self.startDrag(event, n, img),
-            )
+            component.bind("<ButtonPress-1>", lambda event, n=name, img=image: self.startDrag(event, n, img))
             component.bind("<B1-Motion>", self.dragMotion)
             component.bind("<ButtonRelease-1>", self.dropComponent)
             self.items.append(component)
@@ -149,7 +147,7 @@ class Canvas(tk.Frame):
         self.selectedItemID = itemId
         component = self.placedComponents[itemId]
         self.detailsLabel.configure(text = component.name)
-        self.detailsLabel.grid()
+        self.sidePanel.grid()
         x_cord = self.drawingCanvas.canvasx(event.x)
         y_cord = self.drawingCanvas.canvasy(event.y)
         image_x, image_y = self.drawingCanvas.coords(itemId)
@@ -204,7 +202,7 @@ class Canvas(tk.Frame):
         self.drawingCanvas.delete("all")
         self.gui.circuit.clear_components()
         self.placedComponents.clear()
-        self.clearSelection()
+        self.cancelSelection()
     def startDrag(self, event, name: str, image) ->  None:
         self._drag = {"name": name, "image": image}
         self._dragStart = (event.x_root, event.y_root)
@@ -212,7 +210,7 @@ class Canvas(tk.Frame):
     def relcanvasPosition(self, event) -> tuple[int, int, bool]:
         x = event.x_root - self.drawingCanvas.winfo_rootx()
         y = event.y_root - self.drawingCanvas.winfo_rooty()
-        inside = (0<= x < self.drawingCanvas.winfo_width()) and (0 <= y < self.drawingCanvas.winfo_height() )
+        inside = (0 <= x < self.drawingCanvas.winfo_width()) and (0 <= y < self.drawingCanvas.winfo_height() )
         return x, y, inside
     
     def dragMotion(self, event) -> None:
@@ -233,7 +231,7 @@ class Canvas(tk.Frame):
                 self._previewId = None
             return
         if self._previewId is None:
-            self._previewId = self.drawingCanvas.create_image(x, y, image=self._drag["image"])
+            self._previewId = self.drawingCanvas.create_image(x, y, image = self._drag["image"])
         else:
             self.drawingCanvas.coords(self._previewId, x, y)
 
@@ -251,10 +249,10 @@ class Canvas(tk.Frame):
             placed = Component(drag["name"], x, y)
             self.gui.circuit.add_component(placed)
 
-            self.drawingCanvas.create_image(x, y, image=self.componentImages[placed.name])   
-            self.placedComponents[self.selectedItemID] = placed
+            item_id = self.drawingCanvas.create_image(x, y, image=self.componentImages[placed.name])   
+            self.placedComponents[item_id] = placed
 
-    def handleComponentsResize(self, event=None) -> None:
+    def handleComponentsResize(self, event = None) -> None:
         if self.resizeJob is not None:
             self.after_cancel(self.resizeJob)
         self.resizeJob = self.after(100, self.calculateItemsPerPage)
