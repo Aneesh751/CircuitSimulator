@@ -1,3 +1,8 @@
+TERMINAL_OFFSETS = {
+    "Resistor" : [("left", )]
+}
+
+
 class Component:
 
     def __init__(self, name: str, x: int = 0, y: int = 0) -> None:
