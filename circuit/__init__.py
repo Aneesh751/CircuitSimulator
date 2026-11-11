@@ -1,3 +1,3 @@
 from .circuit import Circuit
-
-__all__ = ["Circuit"]
+from .wire import Wire
+__all__ = ["Circuit", "Wire"]

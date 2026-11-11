@@ -1,10 +1,12 @@
 from components import Component
+from circuit import Wire
 
 
 class Circuit:
     def __init__(self, name: str) -> None:
         self.name = name
         self.components: list[Component] = []
+        self.wires: list[Wire] = []
 
     def add_component(self, component: Component) -> None:
         self.components.append(component)
@@ -21,3 +23,9 @@ class Circuit:
     def remove_component(self, component: Component) -> None:
         if component in self.components:
             self.components.remove(component)
+
+    #creating wires
+
+    def addWire(self, wire: Wire) -> bool:
+
+         
