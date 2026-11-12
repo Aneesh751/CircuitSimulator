@@ -1,5 +1,5 @@
 from components import Component
-from circuit import Wire
+from .wire import Wire
 
 
 class Circuit:
