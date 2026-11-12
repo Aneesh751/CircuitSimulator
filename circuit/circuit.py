@@ -45,10 +45,12 @@ class Circuit:
 
         self.wires.remove(wire)
 
-        if wire not in wire.terminal1 or wire not in wire.terminal2:
+        if wire not in wire.terminal1.wires or wire not in wire.terminal2.wires:
             return False
 
         wire.terminal1.wires.remove(wire)
         wire.terminal2.wires.remove(wire)
         return True
+
+    
     
