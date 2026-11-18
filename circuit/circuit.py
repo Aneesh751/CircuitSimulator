@@ -18,8 +18,13 @@ class Circuit:
     #deleting components:
 
     def clear_components(self) -> None:
+        for wire in self.wires.copy():
+            self.removeWire(wire)
+            
+
+
         self.components.clear()
-        self.wires.clear()
+
 
     def remove_component(self, component: Component) -> None:
         if component in self.components:
@@ -42,11 +47,12 @@ class Circuit:
     def removeWire(self, wire: Wire) -> bool:
         if wire not in self.wires:
             return False
-
-        self.wires.remove(wire)
-
+        
         if wire not in wire.terminal1.wires or wire not in wire.terminal2.wires:
             return False
+        self.wires.remove(wire)
+
+
 
         wire.terminal1.wires.remove(wire)
         wire.terminal2.wires.remove(wire)

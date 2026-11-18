@@ -23,6 +23,10 @@ class Canvas(tk.Frame):
         super().__init__(parent, bg=self.bgColour)
         self.gui = gui
 
+        #other variables
+        self.connectionMode = False
+        self.terminalHighlights = []
+
         self.createCanvas()
 
     def createCanvas(self) -> None:
@@ -108,8 +112,8 @@ class Canvas(tk.Frame):
         back.grid(row = 0, column = 0, padx = 10, pady = 8)
         clear = ctk.CTkButton(optionsBox, text = "Clear Canvas", font = ("IBM Plex Sans", 15), width = 140, height = 40, corner_radius = 5, fg_color = "#294F70", hover_color = "#3B6385", text_color = "white", command = self.clearCanvas)
         clear.grid(row = 0, column = 1, columnspan = 1, sticky = "e")
-
-    
+        cMode = ctk.CTkButton(optionsBox, text = "Connection Mode", font = ("IBM Plex Sans", 15), width = 140, height = 40, corner_radius = 5, fg_color = "#294F70", hover_color = "#3B6385", text_color = "white", command = self.openConnectionMode)
+        cMode.grid(row = 0, column = 2, columnspan = 1)
         #the actual canvas where components can be placed
         self.drawingCanvas = tk.Canvas(self, bg = "white", highlightbackground = self.cColour, highlightcolor = self.aColour)
         self.drawingCanvas.grid(row=1, column=1, sticky="nsew", padx=10, pady=10)
@@ -188,6 +192,15 @@ class Canvas(tk.Frame):
     def releaseSelected(self, event) -> None:
         self.dragOffset = None
 
+    def refreshTerminalHighlights(self):
+        for highlight in self.terminalHighlights:
+            self.drawingCanvas.delete(highlight)
+
+        self.terminalHighlights.clear()
+        if self.connectionMode:
+            self.highlightTerminals()
+
+
     def deleteComponent(self, event = None) -> None:
         if self.selectedItemID is None:
             return
@@ -204,6 +217,8 @@ class Canvas(tk.Frame):
         self.drawingCanvas.delete(self.selectedItemID)
         self.gui.circuit.remove_component(component)
         self.cancelSelection()
+
+        self.refreshTerminalHighlights()
 
         return "break"
     def cancelSelection(self) -> None:
@@ -227,7 +242,13 @@ class Canvas(tk.Frame):
         y = event.y_root - self.drawingCanvas.winfo_rooty()
         inside = (0 <= x < self.drawingCanvas.winfo_width()) and (0 <= y < self.drawingCanvas.winfo_height() )
         return x, y, inside
-    
+
+    def getTerminalPos(self, terminal):
+
+        component = terminal.component
+        x = component.x + terminal.xOffset
+        y = component.y + terminal.yOffset
+        return x, y
     def dragMotion(self, event) -> None:
         if self._drag is None:
             return
@@ -266,6 +287,7 @@ class Canvas(tk.Frame):
 
             item_id = self.drawingCanvas.create_image(x, y, image=self.componentImages[placed.name])   
             self.placedComponents[item_id] = placed
+        self.refreshTerminalHighlights()
 
     def handleComponentsResize(self, event = None) -> None:
         if self.resizeJob is not None:
@@ -277,6 +299,32 @@ class Canvas(tk.Frame):
     def unhighlight(self, event) -> None:
         event.widget.configure(bg = self.pColour, borderwidth = 0, relief = "flat")
 
+
+    def openConnectionMode(self) -> None:
+
+        #changes boolean to the opposite state
+        self.connectionMode = not self.connectionMode
+
+        if self.connectionMode:
+            self.highlightTerminals()
+
+        else: 
+            for highlight in self.terminalHighlights:
+                self.drawingCanvas.delete(highlight)
+            self.terminalHighlights.clear()
+    def highlightTerminals(self) -> None:
+        for component in self.gui.circuit.components:
+
+            for terminal in component.terminals:
+                x,y = self.getTerminalPos(terminal)
+
+                if terminal.name == "left":
+                    colour = "green"
+                else:
+                    colour = "red"
+            print(terminal.name, x, y)
+            highlight = self.drawingCanvas.create_oval(x - 4, y - 4, x + 4, y + 4, fill = colour, outline = "white")
+            self.terminalHighlights.append(highlight)
     def calculateItemsPerPage(self) -> None:
         self.update_idletasks()
         availableHeight = self.componentsBox.winfo_height()
