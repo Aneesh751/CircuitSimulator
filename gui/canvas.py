@@ -112,8 +112,8 @@ class Canvas(tk.Frame):
         back.grid(row = 0, column = 0, padx = 10, pady = 8)
         clear = ctk.CTkButton(optionsBox, text = "Clear Canvas", font = ("IBM Plex Sans", 15), width = 140, height = 40, corner_radius = 5, fg_color = "#294F70", hover_color = "#3B6385", text_color = "white", command = self.clearCanvas)
         clear.grid(row = 0, column = 1, columnspan = 1, sticky = "e")
-        cMode = ctk.CTkButton(optionsBox, text = "Connection Mode", font = ("IBM Plex Sans", 15), width = 140, height = 40, corner_radius = 5, fg_color = "#294F70", hover_color = "#3B6385", text_color = "white", command = self.openConnectionMode)
-        cMode.grid(row = 0, column = 2, columnspan = 1)
+        cMode = ctk.CTkButton(optionsBox, text = "Connection Mode", font = ("IBM Plex Sans", 15), width = 140, height = 40, corner_radius = 5, fg_color = "#294F70", hover_color = "#3B6385", text_color = "white", command = self.toggleConnectionMode)
+        cMode.grid(row = 0, column = 2, columnspan = 1, padx = 10, pady = 8)
         #the actual canvas where components can be placed
         self.drawingCanvas = tk.Canvas(self, bg = "white", highlightbackground = self.cColour, highlightcolor = self.aColour)
         self.drawingCanvas.grid(row=1, column=1, sticky="nsew", padx=10, pady=10)
@@ -189,6 +189,8 @@ class Canvas(tk.Frame):
         component.x = round(newX)
         component.y = round(newY)
         #rounding to make sure the new coordinates are integers, because the components class needs integers
+
+        self.refreshTerminalHighlights()
     def releaseSelected(self, event) -> None:
         self.dragOffset = None
 
@@ -300,7 +302,7 @@ class Canvas(tk.Frame):
         event.widget.configure(bg = self.pColour, borderwidth = 0, relief = "flat")
 
 
-    def openConnectionMode(self) -> None:
+    def toggleConnectionMode(self) -> None:
 
         #changes boolean to the opposite state
         self.connectionMode = not self.connectionMode
@@ -322,9 +324,8 @@ class Canvas(tk.Frame):
                     colour = "green"
                 else:
                     colour = "red"
-            print(terminal.name, x, y)
-            highlight = self.drawingCanvas.create_oval(x - 4, y - 4, x + 4, y + 4, fill = colour, outline = "white")
-            self.terminalHighlights.append(highlight)
+                highlight = self.drawingCanvas.create_oval(x - 4, y - 4, x + 4, y + 4, fill = colour, outline = "white")
+                self.terminalHighlights.append(highlight)
     def calculateItemsPerPage(self) -> None:
         self.update_idletasks()
         availableHeight = self.componentsBox.winfo_height()
