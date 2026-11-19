@@ -2,6 +2,7 @@ import tkinter as tk
 from tkinter import ttk
 import customtkinter as ctk
 from components import Component
+from circuit.wire import Wire
 
 class Canvas(tk.Frame):
 
@@ -27,6 +28,12 @@ class Canvas(tk.Frame):
         self.connectionMode = False
         self.terminalHighlights = []
 
+        #terminals that get selected by the user to be connected
+        self.waitingTerminal = None
+        #a map to store a terminal "highlight" linked to the terminal it represents
+        self.terminalsMap = {}
+        #a dictionary of any wires drawn on the canvas:
+        self.drawnWires = {}
         self.createCanvas()
 
     def createCanvas(self) -> None:
@@ -119,7 +126,7 @@ class Canvas(tk.Frame):
         self.drawingCanvas.grid(row=1, column=1, sticky="nsew", padx=10, pady=10)
 
         #mouse events
-        self.drawingCanvas.bind("<Button-1>", self.selectAndDrag)
+        self.drawingCanvas.bind("<Button-1>", self.onClick)
         self.drawingCanvas.bind("<B1-Motion>", self.dragSelected)
         self.drawingCanvas.bind("<ButtonRelease-1>", self.releaseSelected)
 
@@ -140,7 +147,6 @@ class Canvas(tk.Frame):
         self._dragStart = None
         self._dragged = False
         self._previewId = None
-
         for name, image in components:
             component = tk.Label(componentsContainer, image = image, compound= "top", text = name, font = ("IBM Plex Sans", 10) , bg = self.pColour, fg = self.textColour, cursor = "hand2", padx = 8, pady = 8)
             component.bind("<Enter>", lambda event: self.highlight(event))
@@ -159,6 +165,9 @@ class Canvas(tk.Frame):
         if not currentComponents:
             self.cancelSelection()
             return
+        if self.connectionMode: #safety check to prevent dragging if the user is in connection mode
+            return 
+        
         itemId = currentComponents[-1]
         if itemId not in self.placedComponents:
             self.cancelSelection()
@@ -190,19 +199,94 @@ class Canvas(tk.Frame):
         component.y = round(newY)
         #rounding to make sure the new coordinates are integers, because the components class needs integers
 
+        #refresh the canvas to account for any changes in position
         self.refreshTerminalHighlights()
+        self.refreshWires()
     def releaseSelected(self, event) -> None:
         self.dragOffset = None
 
     def refreshTerminalHighlights(self):
+        #clears all the highlights
         for highlight in self.terminalHighlights:
             self.drawingCanvas.delete(highlight)
-
+        #if the user is still in connection mode it rehighlights the terminals
         self.terminalHighlights.clear()
         if self.connectionMode:
             self.highlightTerminals()
+        self.terminalsMap.clear() 
 
 
+    #a separate click handler because the program will need to differentiate between a component being clicked and dragged and a terminal being clicked
+
+    def onClick(self, event):
+        #if connection mode is on, then it checks for a terminal being clicked
+        if self.connectionMode:
+            self.onTerminalClick(event)
+            return "break"
+
+        #if not, it handles the drag event for a component as normal
+        self.selectAndDrag(event)
+
+    def onTerminalClick(self, event):
+        #first, check if the thing being clicked is currently on the canvas:
+        canvasItems = self.drawingCanvas.find_withtag("current")
+        if not canvasItems:
+            return
+        itemId = canvasItems[-1]
+        #since this is for a terminal click it rejects if the object being clicked isnt in the terminal to hightlight map
+        if itemId not in self.terminalsMap:
+            return
+
+        terminal = self.terminalsMap[itemId] #so assuming it is in the map, it gets which terminal it is
+        if self.waitingTerminal is None:
+            self.waitingTerminal = terminal
+            #if there is currently no terminal waiting to be connected then the t"erminal selected just now gets set to it
+            #then the program will give it a yellow outline to indicate its been "selected"
+            self.drawingCanvas.itemconfigure(itemId, outline = "yellow", width = 3)
+        else:
+            #and if not, that means the terminal being clicked is the second terminal so a connection can be created
+            self.addConnection(self.waitingTerminal, terminal)
+            #since a connection has been completed there isnt any waiting terminal:
+            self.waitingTerminal = None
+
+            self.refreshTerminalHighlights()
+            self.refreshWires() 
+
+    def addConnection(self, terminal1, terminal2):
+        #validation 1: if its the same terminal being connected to itself then reject the connection
+        if terminal1 is terminal2:
+            return False
+        #validation 2: if a wire already exists between the two selected terminals, reject the connection
+        for wire in self.gui.circuit.wires: 
+            if (wire.terminal1 is terminal1 and wire.terminal2 is terminal2):
+                return False
+            if (wire.terminal1 is terminal2 and wire.terminal2 is terminal1):
+                return False 
+
+        wire = Wire(terminal1, terminal2)
+        self.gui.circuit.addWire(wire)
+        return True
+
+
+    def refreshWires(self):
+        #iterates through every drawn wire and deletes it
+        for line in self.drawnWires.items():
+            self.drawingCanvas.delete(line)
+        self.drawnWires.clear()
+
+        #gets the cords of the terminals the wire will be drawn between
+        for wire in self.gui.circuit.wires:
+            terminal1X, terminal1Y = self.getTerminalPos(wire.terminal1)
+            terminal2X, terminal2Y = self.getTerminalPos(wire.terminal2)
+            #draws the actual wire onto the canvas
+            line = self.drawingCanvas.create_line(terminal1X, terminal1Y, terminal2X, terminal2Y, fill = "black", width = 2)
+            self.drawnWires[wire] = line
+
+            #to make sure the line doesnt overlap with existing components or terminals the wire is drawn as the bottom layer:
+            self.drawingCanvas.tag_lower(line)
+
+
+    
     def deleteComponent(self, event = None) -> None:
         if self.selectedItemID is None:
             return
@@ -214,13 +298,16 @@ class Canvas(tk.Frame):
         #this checks if the element in focus by the keyboard is a text entry or not.
         if isinstance(focusedElement, (tk.Entry, ttk.Entry)):
             return
-        #if not, proceed as normal#
+        #if not, proceed as normal
         component = self.placedComponents.pop(self.selectedItemID)
         self.drawingCanvas.delete(self.selectedItemID)
         self.gui.circuit.remove_component(component)
         self.cancelSelection()
+        if (self.waitingTerminal is not None and self.waitingTerminal is component):
+            self.waitingTerminal = None
 
         self.refreshTerminalHighlights()
+        self.refreshWires()
 
         return "break"
     def cancelSelection(self) -> None:
@@ -228,13 +315,16 @@ class Canvas(tk.Frame):
         self.dragOffset = None
         self.sidePanel.grid_remove()
 
-
-
     def clearCanvas(self) -> None:
         self.drawingCanvas.delete("all")
         self.gui.circuit.clear_components()
         self.placedComponents.clear()
-        self.cancelSelection()
+        self.cancelSelection()  
+        self.terminalHighlights.clear()
+        self.terminalHighlightMap.clear()
+        self.wireCanvasItems.clear()
+        self.pendingTerminal = None
+
     def startDrag(self, event, name: str, image) ->  None:
         self._drag = {"name": name, "image": image}
         self._dragStart = (event.x_root, event.y_root)
@@ -306,26 +396,33 @@ class Canvas(tk.Frame):
 
         #changes boolean to the opposite state
         self.connectionMode = not self.connectionMode
+        #cancels any components the user selected to avoid errors
+        self.cancelSelection()
 
         if self.connectionMode:
             self.highlightTerminals()
-
         else: 
             for highlight in self.terminalHighlights:
                 self.drawingCanvas.delete(highlight)
             self.terminalHighlights.clear()
+            self.waitingTerminal = None
+            self.terminalsMap.clear()
     def highlightTerminals(self) -> None:
+        #iterates through all the valid components
         for component in self.gui.circuit.components:
-
+            #iterates through every terminal each component has (left and right)
             for terminal in component.terminals:
-                x,y = self.getTerminalPos(terminal)
+                x,y = self.getTerminalPos(terminal) #gets the new x and y coordinates for the terminals to be highlighted
 
                 if terminal.name == "left":
                     colour = "green"
                 else:
                     colour = "red"
-                highlight = self.drawingCanvas.create_oval(x - 4, y - 4, x + 4, y + 4, fill = colour, outline = "white")
+                highlight = self.drawingCanvas.create_oval(x - 4, y - 4, x + 4, y + 4, fill = colour, outline = "white") #circle with radius 4 pixels
                 self.terminalHighlights.append(highlight)
+
+                self.terminalsMap[highlight] = terminal #assigns this specific highlight and the terminal object together on the canvas and puts it into the map
+        
     def calculateItemsPerPage(self) -> None:
         self.update_idletasks()
         availableHeight = self.componentsBox.winfo_height()
